@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { SystemTelemetry, AgentMessage, Preset } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import Icon from '../components/Icon';
@@ -48,29 +47,49 @@ const AgentView = ({ system, onCommand }: AgentViewProps) => {
         }
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const chat = ai.chats.create({
-                model: 'gemini-2.0-flash',
-                config: {
-                    systemInstruction: `You are VIBE (Virtual Interface for Base Operations).
-                    Persona: Highly efficient, slightly cynical cyberpunk system operator.
-                    Context: Local AI Dashboard.
-                    Telemetry: VRAM ${system.vramUsage.toFixed(1)}GB, Temp ${system.gpuTemp.toFixed(1)}°C.
-                    Keep responses concise and technical.`
-                }
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: input,
+                    vram: system.vramUsage.toFixed(1),
+                    temp: system.gpuTemp.toFixed(1),
+                }),
             });
 
-            const result = await chat.sendMessageStream({ message: input });
+            if (!response.ok || !response.body) {
+                throw new Error(`Proxy responded with HTTP ${response.status}`);
+            }
+
             const aiMsgId = crypto.randomUUID();
             setHistory(prev => [...prev, { id: aiMsgId, role: 'ai', text: '', timestamp: new Date().toLocaleTimeString() }]);
 
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
             let fullText = '';
-            for await (const chunk of result) {
-                fullText += chunk.text;
-                setHistory(prev => prev.map(m => m.id === aiMsgId ? { ...m, text: fullText } : m));
+
+            outer: while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                for (const line of decoder.decode(value).split('\n')) {
+                    if (!line.startsWith('data: ')) continue;
+                    const payload = line.slice(6);
+                    if (payload === '[DONE]') break outer;
+                    try {
+                        const { text, error } = JSON.parse(payload);
+                        if (error) throw new Error(error);
+                        if (text) {
+                            fullText += text;
+                            setHistory(prev => prev.map(m => m.id === aiMsgId ? { ...m, text: fullText } : m));
+                        }
+                    } catch (parseErr) {
+                        console.warn('[AgentView] Malformed SSE chunk:', parseErr);
+                    }
+                }
             }
         } catch (e) {
-            console.error('[AgentView] Gemini API error:', e);
+            console.error('[AgentView] Proxy error:', e);
             setHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'ai', text: 'CONNECTION_ERROR: Neural link unstable.', timestamp: new Date().toLocaleTimeString() }]);
         } finally {
             setThinking(false);
