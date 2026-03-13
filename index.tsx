@@ -209,7 +209,7 @@ function useSystemTelemetry() {
 
     const addLog = useCallback((msg: string, type: LogEntry['type'] = 'info') => {
         const entry: LogEntry = {
-            id: Date.now().toString() + Math.random(),
+            id: crypto.randomUUID(),
             timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             message: msg,
             type
@@ -263,9 +263,19 @@ const Badge = React.memo(({ children, color = 'zinc' }: { children: React.ReactN
     );
 });
 
-const Button = React.memo(({ children, onClick, variant = 'primary', className, disabled, icon, title }: any) => {
+interface ButtonProps {
+    children?: React.ReactNode;
+    onClick?: () => void;
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    className?: string;
+    disabled?: boolean;
+    icon?: string;
+    title?: string;
+}
+
+const Button = React.memo(({ children, onClick, variant = 'primary', className, disabled, icon, title }: ButtonProps) => {
     const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]";
-    const variants: any = {
+    const variants: Record<string, string> = {
         primary: "bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.25)] border border-indigo-500/50",
         secondary: "bg-zinc-800/50 hover:bg-zinc-700/80 text-zinc-300 hover:text-white border border-zinc-700 backdrop-blur-sm",
         danger: "bg-rose-900/20 hover:bg-rose-900/40 text-rose-400 border border-rose-800/50",
@@ -325,7 +335,7 @@ const Sidebar = React.memo(({ activeView, onViewChange }: { activeView: ViewMode
 
 const MetricCard = React.memo(({ label, val, max, unit, color }: { label: string, val: number, max: number, unit: string, color: string }) => {
     const percent = Math.min(100, Math.max(0, (val / max) * 100));
-    const colorClasses: any = {
+    const colorClasses: Record<string, string> = {
         indigo: 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]',
         violet: 'bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.6)]',
         emerald: 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]',
@@ -474,7 +484,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
         if (!input.trim() || isThinking) return;
         
         const userMsg: AgentMessage = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             role: 'user',
             text: input,
             timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
@@ -487,7 +497,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
 
         if (input.startsWith('/')) {
             setTimeout(() => {
-                 const responseId = Date.now().toString();
+                 const responseId = crypto.randomUUID();
                  let responseText = `Executing system directive: ${input}`;
                  if (input === '/clear') { setHistory([]); setThinking(false); return; }
                  setHistory(prev => [...prev, { id: responseId, role: 'ai', text: responseText, timestamp: new Date().toLocaleTimeString() }]);
@@ -500,7 +510,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const chat = ai.chats.create({
-                model: 'gemini-3-pro-preview',
+                model: 'gemini-2.0-flash',
                 config: {
                     systemInstruction: `You are VIBE (Virtual Interface for Base Operations). 
                     Persona: Highly efficient, slightly cynical cyberpunk system operator.
@@ -511,7 +521,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
             });
             
             const result = await chat.sendMessageStream({ message: input });
-            const aiMsgId = (Date.now() + 1).toString();
+            const aiMsgId = crypto.randomUUID();
             setHistory(prev => [...prev, { id: aiMsgId, role: 'ai', text: '', timestamp: new Date().toLocaleTimeString() }]);
 
             let fullText = '';
@@ -520,7 +530,8 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
                 setHistory(prev => prev.map(m => m.id === aiMsgId ? { ...m, text: fullText } : m));
             }
         } catch (e) {
-            setHistory(prev => [...prev, { id: Date.now().toString(), role: 'ai', text: 'CONNECTION_ERROR: Neural link unstable.', timestamp: new Date().toLocaleTimeString() }]);
+            console.error('[AgentView] Gemini API error:', e);
+            setHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'ai', text: 'CONNECTION_ERROR: Neural link unstable.', timestamp: new Date().toLocaleTimeString() }]);
         } finally {
             setThinking(false);
         }
@@ -528,7 +539,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
 
     const savePreset = () => {
         if (!input) return;
-        setPresets(prev => [...prev, { id: Date.now().toString(), label: input.substring(0, 12) + '...', command: input }]);
+        setPresets(prev => [...prev, { id: crypto.randomUUID(), label: input.substring(0, 12) + '...', command: input }]);
     };
 
     return (
@@ -731,6 +742,12 @@ const ExplorerView = () => {
 
 const WorkflowView = ({ loadFactorSetter }: { loadFactorSetter: (n: number) => void }) => {
     const [workflows, setWorkflows] = useState(INITIAL_WORKFLOWS);
+    const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+    useEffect(() => {
+        const intervals = intervalsRef.current;
+        return () => { intervals.forEach(clearInterval); intervals.clear(); };
+    }, []);
 
     const toggleWorkflow = useCallback((id: string) => {
         setWorkflows(prev => prev.map(w => w.id === id ? { ...w, status: 'running', progress: 0 } : w));
@@ -742,12 +759,14 @@ const WorkflowView = ({ loadFactorSetter }: { loadFactorSetter: (n: number) => v
             if (p >= 100) {
                 p = 100;
                 clearInterval(int);
+                intervalsRef.current.delete(id);
                 setWorkflows(prev => prev.map(w => w.id === id ? { ...w, status: 'completed', progress: 100 } : w));
                 loadFactorSetter(0.1);
             } else {
                 setWorkflows(prev => prev.map(w => w.id === id ? { ...w, progress: p } : w));
             }
         }, 400);
+        intervalsRef.current.set(id, int);
     }, [loadFactorSetter]);
 
     const renderWorkflowCard = (wf: Workflow) => (
