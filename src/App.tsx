@@ -16,22 +16,28 @@ export default function App() {
     const { system, setSystem, addLog, setLoadFactor } = useSystemTelemetry();
     const [showExport, setShowExport] = useState(false);
 
-    const handleSystemAction = useCallback((action: string) => {
-        if (action === 'purge') {
-            addLog('Purging VRAM cache...', 'warn');
-            setSystem(prev => ({...prev, vramUsage: Math.max(1.5, prev.vramUsage * 0.4)}));
-            setTimeout(() => addLog('Cache purge complete. VRAM freed.', 'info'), 1000);
-        }
-        if (action === 'update') {
-            addLog('Checking git remote origin...', 'net');
-            setTimeout(() => addLog('System is up to date.', 'info'), 1500);
-        }
-    }, [addLog, setSystem]);
+    const handleSystemAction = useCallback(
+        (action: string) => {
+            if (action === 'purge') {
+                addLog('Purging VRAM cache...', 'warn');
+                setSystem((prev) => ({ ...prev, vramUsage: Math.max(1.5, prev.vramUsage * 0.4) }));
+                setTimeout(() => addLog('Cache purge complete. VRAM freed.', 'info'), 1000);
+            }
+            if (action === 'update') {
+                addLog('Checking git remote origin...', 'net');
+                setTimeout(() => addLog('System is up to date.', 'info'), 1500);
+            }
+        },
+        [addLog, setSystem]
+    );
 
-    const handleAgentCommand = useCallback((cmd: string) => {
-        if (cmd === '/clear') addLog('Agent history cleared via command.');
-        else addLog(`Agent executed: ${cmd}`);
-    }, [addLog]);
+    const handleAgentCommand = useCallback(
+        (cmd: string) => {
+            if (cmd === '/clear') addLog('Agent history cleared via command.');
+            else addLog(`Agent executed: ${cmd}`);
+        },
+        [addLog]
+    );
 
     return (
         <div className="h-screen w-screen flex bg-black text-zinc-200 overflow-hidden font-sans selection:bg-indigo-500/30">
@@ -55,15 +61,21 @@ export default function App() {
                     <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl">
                         <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
                             <h3 className="font-bold text-white">Source Code</h3>
-                            <button onClick={() => setShowExport(false)} className="text-zinc-500 hover:text-white"><Icon name="close"/></button>
+                            <button onClick={() => setShowExport(false)} className="text-zinc-500 hover:text-white">
+                                <Icon name="close" />
+                            </button>
                         </div>
                         <div className="flex-1 p-4 bg-black overflow-hidden relative flex items-center justify-center">
                             <p className="text-zinc-500 text-center">
-                                Press <strong className="text-white">Ctrl+A</strong> to select all code in this file,<br/>then copy to your local project.
+                                Press <strong className="text-white">Ctrl+A</strong> to select all code in this file,
+                                <br />
+                                then copy to your local project.
                             </p>
                         </div>
                         <div className="p-4 border-t border-zinc-800 flex justify-end bg-zinc-900">
-                            <Button onClick={() => setShowExport(false)} variant="secondary">Done</Button>
+                            <Button onClick={() => setShowExport(false)} variant="secondary">
+                                Done
+                            </Button>
                         </div>
                     </div>
                 </div>

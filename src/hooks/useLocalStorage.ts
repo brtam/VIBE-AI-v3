@@ -11,17 +11,20 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
         }
     });
 
-    const setValue = useCallback((value: T | ((val: T) => T)) => {
-        try {
-            setStoredValue(prev => {
-                const valueToStore = value instanceof Function ? value(prev) : value;
-                window.localStorage.setItem(key, JSON.stringify(valueToStore));
-                return valueToStore;
-            });
-        } catch (error) {
-            console.error(`[useLocalStorage] Failed to write key "${key}":`, error);
-        }
-    }, [key]);
+    const setValue = useCallback(
+        (value: T | ((val: T) => T)) => {
+            try {
+                setStoredValue((prev) => {
+                    const valueToStore = value instanceof Function ? value(prev) : value;
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                    return valueToStore;
+                });
+            } catch (error) {
+                console.error(`[useLocalStorage] Failed to write key "${key}":`, error);
+            }
+        },
+        [key]
+    );
 
     return [storedValue, setValue];
 }

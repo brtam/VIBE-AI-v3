@@ -14,7 +14,7 @@ const MetricCard = React.memo(({ label, val, max, unit, color }: MetricCardProps
         indigo: 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]',
         violet: 'bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.6)]',
         emerald: 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]',
-        rose: 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.6)]'
+        rose: 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.6)]',
     };
 
     return (
@@ -30,10 +30,12 @@ const MetricCard = React.memo(({ label, val, max, unit, color }: MetricCardProps
             <div className="w-full h-1.5 bg-zinc-950 rounded-full overflow-hidden relative z-10 border border-white/5">
                 <div
                     className={`h-full transition-all duration-1000 ease-out rounded-full ${colorClasses[color]}`}
-                    style={{width: `${percent}%`}}
+                    style={{ width: `${percent}%` }}
                 ></div>
             </div>
-            <div className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-5 blur-3xl ${color === 'rose' ? 'bg-rose-500' : `bg-${color}-500`}`}></div>
+            <div
+                className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-5 blur-3xl ${color === 'rose' ? 'bg-rose-500' : `bg-${color}-500`}`}
+            ></div>
         </div>
     );
 });

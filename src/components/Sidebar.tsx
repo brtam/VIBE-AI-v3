@@ -13,7 +13,7 @@ const Sidebar = React.memo(({ activeView, onViewChange }: SidebarProps) => {
         { id: 'explorer', icon: 'folder_open', label: 'Files' },
         { id: 'workflows', icon: 'hub', label: 'Pipelines' },
         { id: 'agent', icon: 'smart_toy', label: 'Neural Link' },
-        { id: 'blender', icon: 'deployed_code', label: '3D Forge' }
+        { id: 'blender', icon: 'deployed_code', label: '3D Forge' },
     ];
 
     return (
@@ -33,7 +33,9 @@ const Sidebar = React.memo(({ activeView, onViewChange }: SidebarProps) => {
                         aria-label={item.label}
                     >
                         <Icon name={item.icon} className={activeView === item.id ? 'animate-pulse' : ''} />
-                        {activeView === item.id && <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_10px_#6366f1]"></div>}
+                        {activeView === item.id && (
+                            <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_10px_#6366f1]"></div>
+                        )}
                         <div className="absolute left-full ml-4 px-2 py-1 bg-zinc-900 text-zinc-200 text-[10px] font-bold uppercase rounded border border-zinc-800 opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-xl z-50 translate-x-[-10px] group-hover:translate-x-0">
                             {item.label}
                         </div>
@@ -41,7 +43,10 @@ const Sidebar = React.memo(({ activeView, onViewChange }: SidebarProps) => {
                 ))}
             </div>
 
-            <button onClick={() => onViewChange('settings')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeView === 'settings' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <button
+                onClick={() => onViewChange('settings')}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeView === 'settings' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-300'}`}
+            >
                 <Icon name="settings" />
             </button>
         </nav>

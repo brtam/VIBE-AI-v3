@@ -9,27 +9,63 @@ export const INITIAL_SYSTEM_STATE: SystemTelemetry = {
     activeServices: ['Ollama Service', 'ComfyUI Backend'],
     logs: [
         { id: '1', timestamp: '10:00:01', message: 'VIBE System Core initialized', type: 'info' },
-        { id: '2', timestamp: '10:00:02', message: 'Network listener active on port 3000', type: 'net' }
+        { id: '2', timestamp: '10:00:02', message: 'Network listener active on port 3000', type: 'net' },
     ],
-    isSimulated: true
+    isSimulated: true,
 };
 
 export const MOCK_FILES: FileItem[] = [
-    { id: 'root', name: 'root', type: 'folder', date: '-', children: [
-        { id: 'models', name: 'models', type: 'folder', date: '2024-05-20', children: [
-            { id: 'ckpt', name: 'checkpoints', type: 'folder', date: '2024-05-20', children: []},
-            { id: 'llama3', name: 'llama-3-8b-instruct.gguf', type: 'model', size: '5.2GB', date: '2024-05-15' },
-            { id: 'sdxl', name: 'sdxl_turbo_v1.0.safetensors', type: 'model', size: '6.9GB', date: '2024-05-10' },
-        ]},
-        { id: 'proj', name: 'projects', type: 'folder', date: '2024-02-10', children: [
-            { id: 'py1', name: 'vibe_core.py', type: 'code', size: '12KB', date: 'Today 11:00' },
-            { id: 'ts1', name: 'utils.ts', type: 'code', size: '4KB', date: 'Yesterday' }
-        ]},
-        { id: 'out', name: 'outputs', type: 'folder', date: '2024-05-21', children: [
-            { id: 'img1', name: 'render_0042.png', type: 'image', size: '2.4MB', date: 'Today 10:23' },
-            { id: 'vid1', name: 'scene_sequence_01.mp4', type: 'video', size: '45.2MB', date: 'Today 10:25' },
-        ]},
-    ]}
+    {
+        id: 'root',
+        name: 'root',
+        type: 'folder',
+        date: '-',
+        children: [
+            {
+                id: 'models',
+                name: 'models',
+                type: 'folder',
+                date: '2024-05-20',
+                children: [
+                    { id: 'ckpt', name: 'checkpoints', type: 'folder', date: '2024-05-20', children: [] },
+                    {
+                        id: 'llama3',
+                        name: 'llama-3-8b-instruct.gguf',
+                        type: 'model',
+                        size: '5.2GB',
+                        date: '2024-05-15',
+                    },
+                    {
+                        id: 'sdxl',
+                        name: 'sdxl_turbo_v1.0.safetensors',
+                        type: 'model',
+                        size: '6.9GB',
+                        date: '2024-05-10',
+                    },
+                ],
+            },
+            {
+                id: 'proj',
+                name: 'projects',
+                type: 'folder',
+                date: '2024-02-10',
+                children: [
+                    { id: 'py1', name: 'vibe_core.py', type: 'code', size: '12KB', date: 'Today 11:00' },
+                    { id: 'ts1', name: 'utils.ts', type: 'code', size: '4KB', date: 'Yesterday' },
+                ],
+            },
+            {
+                id: 'out',
+                name: 'outputs',
+                type: 'folder',
+                date: '2024-05-21',
+                children: [
+                    { id: 'img1', name: 'render_0042.png', type: 'image', size: '2.4MB', date: 'Today 10:23' },
+                    { id: 'vid1', name: 'scene_sequence_01.mp4', type: 'video', size: '45.2MB', date: 'Today 10:25' },
+                ],
+            },
+        ],
+    },
 ];
 
 export const INITIAL_WORKFLOWS: Workflow[] = [
@@ -43,7 +79,7 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'template',
-        specs: { vram: '4.2 GB', models: ['RealESRGAN_x4plus'], tools: ['OpenCV', 'TileBuffer'] }
+        specs: { vram: '4.2 GB', models: ['RealESRGAN_x4plus'], tools: ['OpenCV', 'TileBuffer'] },
     },
     {
         id: 'video_edit',
@@ -54,7 +90,7 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'template',
-        specs: { vram: '6.5 GB', models: ['RIFE-v4.6', 'PySceneDetect'], tools: ['FFmpeg'] }
+        specs: { vram: '6.5 GB', models: ['RIFE-v4.6', 'PySceneDetect'], tools: ['FFmpeg'] },
     },
     {
         id: 'img2vid',
@@ -65,7 +101,7 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'template',
-        specs: { vram: '10.8 GB', models: ['SVD-XT-1.1', 'MotionCtrl'], tools: ['ComfyUI'] }
+        specs: { vram: '10.8 GB', models: ['SVD-XT-1.1', 'MotionCtrl'], tools: ['ComfyUI'] },
     },
     // UTILITIES
     {
@@ -77,7 +113,7 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'utility',
-        specs: { vram: '2.0 GB', models: ['XTTS-v2'], tools: ['TorchAudio'] }
+        specs: { vram: '2.0 GB', models: ['XTTS-v2'], tools: ['TorchAudio'] },
     },
     {
         id: 'code',
@@ -88,7 +124,7 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'utility',
-        specs: { vram: '8.0 GB', models: ['DeepSeek-Coder-33B'], tools: ['LlamaCPP'] }
+        specs: { vram: '8.0 GB', models: ['DeepSeek-Coder-33B'], tools: ['LlamaCPP'] },
     },
     {
         id: 'train',
@@ -99,6 +135,6 @@ export const INITIAL_WORKFLOWS: Workflow[] = [
         status: 'idle',
         progress: 0,
         category: 'utility',
-        specs: { vram: '12.0 GB', models: ['SDXL Base 1.0'], tools: ['Kohya_ss'] }
-    }
+        specs: { vram: '12.0 GB', models: ['SDXL Base 1.0'], tools: ['Kohya_ss'] },
+    },
 ];

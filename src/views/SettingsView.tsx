@@ -14,8 +14,12 @@ const SettingsView = ({ onExport }: SettingsViewProps) => (
             </div>
             <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur">
                 <h3 className="text-xl font-bold text-white mb-4">Local Deployment Bridge</h3>
-                <p className="text-zinc-400 mb-6 text-sm">Browser sandbox restrictions prevent direct hardware access.</p>
-                <Button onClick={onExport} variant="primary" className="w-full py-3">Export Source Code</Button>
+                <p className="text-zinc-400 mb-6 text-sm">
+                    Browser sandbox restrictions prevent direct hardware access.
+                </p>
+                <Button onClick={onExport} variant="primary" className="w-full py-3">
+                    Export Source Code
+                </Button>
             </div>
         </div>
     </div>

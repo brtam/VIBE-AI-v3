@@ -13,17 +13,22 @@ export function useSystemTelemetry() {
     const addLog = useCallback((msg: string, type: LogEntry['type'] = 'info') => {
         const entry: LogEntry = {
             id: crypto.randomUUID(),
-            timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            timestamp: new Date().toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }),
             message: msg,
-            type
+            type,
         };
-        setSystem(prev => ({ ...prev, logs: [...prev.logs.slice(-29), entry] }));
+        setSystem((prev) => ({ ...prev, logs: [...prev.logs.slice(-29), entry] }));
     }, []);
 
     useEffect(() => {
         if (!system.isSimulated) return;
         const interval = setInterval(() => {
-            setSystem(prev => {
+            setSystem((prev) => {
                 const lf = loadFactorRef.current;
                 let newVram = prev.vramUsage + (Math.random() - 0.45) * lf;
                 newVram = Math.max(1.5, Math.min(prev.vramTotal - 0.2, newVram));
@@ -35,7 +40,7 @@ export function useSystemTelemetry() {
                     ...prev,
                     vramUsage: newVram,
                     gpuTemp: newTemp,
-                    ramUsage: Math.max(4, Math.min(prev.ramTotal, prev.ramUsage + (Math.random() - 0.5) * 0.2))
+                    ramUsage: Math.max(4, Math.min(prev.ramTotal, prev.ramUsage + (Math.random() - 0.5) * 0.2)),
                 };
             });
         }, 1500);

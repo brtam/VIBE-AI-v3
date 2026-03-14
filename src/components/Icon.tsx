@@ -7,7 +7,9 @@ interface IconProps {
 }
 
 const Icon = React.memo(({ name, className, size = 'text-base' }: IconProps) => (
-    <span className={`material-symbols-outlined select-none ${size} ${className || ''}`} aria-hidden="true">{name}</span>
+    <span className={`material-symbols-outlined select-none ${size} ${className || ''}`} aria-hidden="true">
+        {name}
+    </span>
 ));
 
 Icon.displayName = 'Icon';
