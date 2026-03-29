@@ -54,9 +54,12 @@ Acesse **http://127.0.0.1:3000** no navegador.
 
 | Comando | O que faz |
 |---|---|
-| `npm run dev` | Inicia o servidor de desenvolvimento (porta 3000) |
-| `npm run build` | Gera o build de produção na pasta `dist/` |
-| `npm run preview` | Pré-visualiza o build de produção localmente |
+| `npm run dev` | Servidor de desenvolvimento Vite (porta 3000) |
+| `npm run build` | Gera o build de produção em `dist/` |
+| `npm run preview` | Pré-visualiza o build localmente (sem backend) |
+| `npm run server:dev` | Roda o backend Express diretamente (para testes) |
+| `npm run server:start` | Inicia o backend Express em modo produção |
+| `npm start` | Build + inicia backend Express (deploy completo) |
 | `npm test` | Executa todos os testes uma vez |
 | `npm run test:watch` | Modo watch — re-executa testes ao salvar |
 | `npm run test:coverage` | Gera relatório de cobertura em `coverage/` |
@@ -73,11 +76,13 @@ Acesse **http://127.0.0.1:3000** no navegador.
 VIBE-AI-v3/
 ├── index.tsx              # Entry point (createRoot)
 ├── index.html             # HTML base
-├── vite.config.ts         # Config Vite + proxy Gemini (/api/chat)
+├── vite.config.ts         # Config Vite + proxy Gemini (/api/chat, só em dev)
 ├── vitest.config.ts       # Config de testes
 ├── eslint.config.js       # Regras ESLint (flat config)
 ├── .prettierrc            # Formatação Prettier
 ├── .env.local.example     # Template de variáveis de ambiente
+├── server/
+│   └── index.ts           # Backend Express (produção: SSE + static files)
 └── src/
     ├── App.tsx            # Componente raiz + estado global
     ├── types/index.ts     # Interfaces TypeScript
@@ -117,11 +122,39 @@ VIBE-AI-v3/
 
 ---
 
-## Nota sobre produção
+## Rodando em produção
 
-O proxy que protege a API key (`/api/chat` em `vite.config.ts`) funciona **apenas em desenvolvimento** (`npm run dev`).
+O projeto inclui um backend Express real em `server/index.ts` que:
+- Serve os arquivos estáticos gerados pelo `npm run build` (`dist/`)
+- Expõe o endpoint `POST /api/chat` com streaming SSE
+- Lê `GEMINI_API_KEY` do ambiente do processo (nunca exposta no cliente)
 
-Para um deploy em produção, é necessário um backend real. Opções simples:
-- Servidor **Express/Fastify** com o mesmo endpoint SSE
-- **Cloudflare Workers** ou **Vercel Edge Functions**
-- Qualquer função serverless (AWS Lambda, Google Cloud Functions)
+### Deploy rápido (qualquer VPS/servidor)
+
+```bash
+# 1. Configure a chave
+export GEMINI_API_KEY=sua_chave_aqui
+export PORT=3000          # opcional, padrão 3000
+
+# 2. Build + start (um comando só)
+npm start
+```
+
+Acesse **http://localhost:3000** — o Express serve o React e faz o proxy do Gemini.
+
+### Variáveis de ambiente (produção)
+
+| Variável | Obrigatório | Descrição |
+|---|---|---|
+| `GEMINI_API_KEY` | Sim | Chave da API Google Gemini |
+| `PORT` | Não | Porta do servidor (padrão: `3000`) |
+| `NODE_ENV` | Não | Definido como `production` por `server:start` |
+
+### Desenvolvimento vs. Produção
+
+| | `npm run dev` | `npm start` |
+|---|---|---|
+| Servidor | Vite Dev Server | Express (`server/index.ts`) |
+| React | Hot reload em tempo real | Build estático (`dist/`) |
+| Proxy `/api/chat` | Plugin Vite (`vite.config.ts`) | Express middleware |
+| API key | Processo Vite | Processo Express |
