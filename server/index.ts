@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -14,11 +13,7 @@ app.use(express.static(distPath));
 
 // ── POST /api/chat ─────────────────────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        res.status(503).json({ error: 'GEMINI_API_KEY not set in environment' });
-        return;
-    }
+    const lmStudioUrl = process.env.LM_STUDIO_URL ?? 'http://localhost:1234';
 
     const { message, vram, temp } = req.body as {
         message: string;
@@ -38,28 +33,66 @@ app.post('/api/chat', async (req, res) => {
     });
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
-        const chat = ai.chats.create({
-            model: 'gemini-2.0-flash',
-            config: {
-                systemInstruction: `You are VIBE (Virtual Interface for Base Operations).
+        // System prompt for VIBE personality
+        const systemPrompt = `You are VIBE (Virtual Interface for Base Operations).
 Persona: Highly efficient, slightly cynical cyberpunk system operator.
 Context: Local AI Dashboard.
 Telemetry: VRAM ${vram ?? 'N/A'}GB, Temp ${temp ?? 'N/A'}°C.
-Keep responses concise and technical.`,
-            },
+Keep responses concise and technical.`;
+
+        const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'local-model',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: message },
+                ],
+                stream: true,
+                temperature: 0.7,
+                max_tokens: 1024,
+            }),
         });
 
-        const result = await chat.sendMessageStream({ message });
-        for await (const chunk of result) {
-            if (chunk.text) {
-                res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+        if (!response.ok || !response.body) {
+            throw new Error(`LM Studio responded with status ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+
+                    try {
+                        const chunk = JSON.parse(data);
+                        const text = chunk.choices?.[0]?.delta?.content;
+                        if (text) {
+                            res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                        }
+                    } catch {
+                        // Ignore parse errors
+                    }
+                }
             }
         }
+
         res.write('data: [DONE]\n\n');
     } catch (err) {
         console.error('[/api/chat]', err);
-        res.write(`data: ${JSON.stringify({ error: 'Upstream API error' })}\n\n`);
+        res.write(`data: ${JSON.stringify({ error: 'LM Studio connection error' })}\n\n`);
     } finally {
         res.end();
     }

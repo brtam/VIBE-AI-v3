@@ -17,20 +17,13 @@ export default defineConfig(({ mode }) => {
         plugins: [
             react(),
             {
-                name: 'gemini-proxy',
+                name: 'lm-studio-proxy',
                 configureServer(server) {
                     const middleware: Connect = async (req, res, next) => {
                         if (req.url !== '/api/chat') return next();
                         if (req.method !== 'POST') {
                             res.writeHead(405);
                             res.end('Method Not Allowed');
-                            return;
-                        }
-
-                        const apiKey = env.GEMINI_API_KEY;
-                        if (!apiKey) {
-                            res.writeHead(503, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'GEMINI_API_KEY not set in .env.local' }));
                             return;
                         }
 
@@ -54,30 +47,66 @@ export default defineConfig(({ mode }) => {
                         });
 
                         try {
-                            // Dynamic import keeps @google/genai out of the client bundle
-                            const { GoogleGenAI } = await import('@google/genai');
-                            const ai = new GoogleGenAI({ apiKey });
-                            const chat = ai.chats.create({
-                                model: 'gemini-2.0-flash',
-                                config: {
-                                    systemInstruction: `You are VIBE (Virtual Interface for Base Operations).
+                            const lmStudioUrl = 'http://localhost:1234';
+                            const systemPrompt = `You are VIBE (Virtual Interface for Base Operations).
 Persona: Highly efficient, slightly cynical cyberpunk system operator.
 Context: Local AI Dashboard.
 Telemetry: VRAM ${body.vram}GB, Temp ${body.temp}°C.
-Keep responses concise and technical.`
-                                }
+Keep responses concise and technical.`;
+
+                            const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    model: 'local-model',
+                                    messages: [
+                                        { role: 'system', content: systemPrompt },
+                                        { role: 'user', content: body.message },
+                                    ],
+                                    stream: true,
+                                    temperature: 0.7,
+                                    max_tokens: 1024,
+                                }),
                             });
 
-                            const result = await chat.sendMessageStream({ message: body.message });
-                            for await (const chunk of result) {
-                                if (chunk.text) {
-                                    res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+                            if (!response.ok || !response.body) {
+                                throw new Error(`LM Studio responded with status ${response.status}`);
+                            }
+
+                            const reader = response.body.getReader();
+                            const decoder = new TextDecoder();
+                            let buffer = '';
+
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+
+                                buffer += decoder.decode(value, { stream: true });
+                                const lines = buffer.split('\n');
+                                buffer = lines.pop() ?? '';
+
+                                for (const line of lines) {
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.slice(6);
+                                        if (data === '[DONE]') continue;
+
+                                        try {
+                                            const chunk = JSON.parse(data);
+                                            const text = chunk.choices?.[0]?.delta?.content;
+                                            if (text) {
+                                                res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                                            }
+                                        } catch {
+                                            // Ignore parse errors
+                                        }
+                                    }
                                 }
                             }
+
                             res.write('data: [DONE]\n\n');
                         } catch (e) {
-                            console.error('[gemini-proxy]', e);
-                            res.write(`data: ${JSON.stringify({ error: 'Upstream API error' })}\n\n`);
+                            console.error('[lm-studio-proxy]', e);
+                            res.write(`data: ${JSON.stringify({ error: 'LM Studio connection error' })}\n\n`);
                         } finally {
                             res.end();
                         }

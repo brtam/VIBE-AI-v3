@@ -5,7 +5,9 @@ Dashboard de operações de IA local com interface cyberpunk, construído em Rea
 ## Pré-requisitos
 
 - **Node.js** 18 ou superior → [nodejs.org](https://nodejs.org)
-- **Chave de API do Google Gemini** → [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- **LM Studio** rodando localmente com um modelo carregado → [lmstudio.ai](https://lmstudio.ai)
+  - Baixe LM Studio, instale um modelo (ex: Mistral, Llama), e rode em paralelo (`Ctrl+K` para iniciar servidor)
+  - Padrão: `http://localhost:1234`
 
 ---
 
@@ -24,7 +26,7 @@ cd VIBE-AI-v3
 npm install
 ```
 
-### 3. Configure a chave de API
+### 3. Configure LM Studio (se necessário)
 
 Crie o arquivo `.env.local` na raiz do projeto (use o template disponível):
 
@@ -32,13 +34,13 @@ Crie o arquivo `.env.local` na raiz do projeto (use o template disponível):
 cp .env.local.example .env.local
 ```
 
-Abra `.env.local` e substitua o valor:
+Por padrão, o projeto conecta em `http://localhost:1234`. Se LM Studio roda em outro host/porta, edite `.env.local`:
 
 ```env
-GEMINI_API_KEY=sua_chave_aqui
+LM_STUDIO_URL=http://seu-host:porta
 ```
 
-> A chave **nunca é exposta no bundle do cliente** — ela fica no processo do servidor Vite e é usada via proxy SSE interno.
+> Tudo roda **completamente localmente** — nenhuma requisição sai para a nuvem.
 
 ### 4. Inicie o servidor de desenvolvimento
 
@@ -127,27 +129,32 @@ VIBE-AI-v3/
 O projeto inclui um backend Express real em `server/index.ts` que:
 - Serve os arquivos estáticos gerados pelo `npm run build` (`dist/`)
 - Expõe o endpoint `POST /api/chat` com streaming SSE
-- Lê `GEMINI_API_KEY` do ambiente do processo (nunca exposta no cliente)
+- Conecta ao LM Studio local (sem dependências de API na nuvem)
 
 ### Deploy rápido (qualquer VPS/servidor)
 
+Você precisa de **LM Studio rodando no mesmo servidor** (ou acessível na rede).
+
 ```bash
-# 1. Configure a chave
-export GEMINI_API_KEY=sua_chave_aqui
+# 1. Inicie LM Studio no servidor (em outra janela/processo)
+# Baixe LM Studio em lmstudio.ai, instale um modelo, e execute
+
+# 2. Na raiz do projeto, configure (opcional, se LM Studio não está no localhost:1234)
+export LM_STUDIO_URL=http://localhost:1234
 export PORT=3000          # opcional, padrão 3000
 
-# 2. Build + start (um comando só)
+# 3. Build + start
 npm start
 ```
 
-Acesse **http://localhost:3000** — o Express serve o React e faz o proxy do Gemini.
+Acesse **http://localhost:3000** — o Express serve o React e faz proxy ao LM Studio local.
 
 ### Variáveis de ambiente (produção)
 
 | Variável | Obrigatório | Descrição |
 |---|---|---|
-| `GEMINI_API_KEY` | Sim | Chave da API Google Gemini |
-| `PORT` | Não | Porta do servidor (padrão: `3000`) |
+| `LM_STUDIO_URL` | Não | URL do LM Studio (padrão: `http://localhost:1234`) |
+| `PORT` | Não | Porta do servidor VIBE (padrão: `3000`) |
 | `NODE_ENV` | Não | Definido como `production` por `server:start` |
 
 ### Desenvolvimento vs. Produção
@@ -157,4 +164,4 @@ Acesse **http://localhost:3000** — o Express serve o React e faz o proxy do Ge
 | Servidor | Vite Dev Server | Express (`server/index.ts`) |
 | React | Hot reload em tempo real | Build estático (`dist/`) |
 | Proxy `/api/chat` | Plugin Vite (`vite.config.ts`) | Express middleware |
-| API key | Processo Vite | Processo Express |
+| IA Backend | LM Studio local | LM Studio local |
