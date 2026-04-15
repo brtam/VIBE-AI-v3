@@ -26,12 +26,17 @@ cd VIBE-AI-v3
 npm install
 ```
 
-### 3. Configure LM Studio (se necessário)
+### 3. Configure a API Key e o LM Studio
 
 Crie o arquivo `.env.local` na raiz do projeto (use o template disponível):
 
 ```bash
 cp .env.local.example .env.local
+```
+
+Abra o `.env.local` e configure sua API do Gemini (necessária para usar a interface neural):
+```env
+VITE_GEMINI_API_KEY=sua-chave-aqui
 ```
 
 Por padrão, o projeto conecta em `http://localhost:1234`. Se LM Studio roda em outro host/porta, edite `.env.local`:
@@ -40,7 +45,7 @@ Por padrão, o projeto conecta em `http://localhost:1234`. Se LM Studio roda em 
 LM_STUDIO_URL=http://seu-host:porta
 ```
 
-> Tudo roda **completamente localmente** — nenhuma requisição sai para a nuvem.
+> Tudo roda **completamente localmente** — a única requisição externa será para a API do Gemini. As requisições de chat locais roteiam via Express.
 
 ### 4. Inicie o servidor de desenvolvimento
 
@@ -153,6 +158,7 @@ Acesse **http://localhost:3000** — o Express serve o React e faz proxy ao LM S
 
 | Variável | Obrigatório | Descrição |
 |---|---|---|
+| `VITE_GEMINI_API_KEY`| Sim | API Key do Gemini (usada no AgentView) |
 | `LM_STUDIO_URL` | Não | URL do LM Studio (padrão: `http://localhost:1234`) |
 | `PORT` | Não | Porta do servidor VIBE (padrão: `3000`) |
 | `NODE_ENV` | Não | Definido como `production` por `server:start` |
