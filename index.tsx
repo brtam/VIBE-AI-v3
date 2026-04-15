@@ -471,12 +471,13 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
     useEffect(() => { inputRef.current?.focus(); }, []);
 
     const handleSend = async () => {
-        if (!input.trim() || isThinking) return;
+        const trimmed = input.trim();
+        if (!trimmed || isThinking) return;
         
         const userMsg: AgentMessage = {
             id: Date.now().toString(),
             role: 'user',
-            text: input,
+            text: trimmed,
             timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
             snapshot: { vram: system.vramUsage.toFixed(1), temp: system.gpuTemp.toFixed(1) }
         };
@@ -485,20 +486,26 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
         setInput('');
         setThinking(true);
 
-        if (input.startsWith('/')) {
+        if (trimmed.startsWith('/')) {
             setTimeout(() => {
                  const responseId = Date.now().toString();
-                 let responseText = `Executing system directive: ${input}`;
-                 if (input === '/clear') { setHistory([]); setThinking(false); return; }
+                 let responseText = `Executing system directive: ${trimmed}`;
+                 if (trimmed === '/clear') { setHistory([]); setThinking(false); return; }
                  setHistory(prev => [...prev, { id: responseId, role: 'ai', text: responseText, timestamp: new Date().toLocaleTimeString() }]);
                  setThinking(false);
-                 onCommand(input);
+                 onCommand(trimmed);
             }, 600);
             return;
         }
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            if (!apiKey) {
+                setHistory(prev => [...prev, { id: Date.now().toString(), role: 'ai', text: 'CONFIG_ERROR: Missing VITE_GEMINI_API_KEY. Add it to your .env.local.', timestamp: new Date().toLocaleTimeString() }]);
+                return;
+            }
+
+            const ai = new GoogleGenAI({ apiKey });
             const chat = ai.chats.create({
                 model: 'gemini-3-pro-preview',
                 config: {
@@ -510,7 +517,7 @@ const AgentView = ({ system, onCommand }: { system: SystemTelemetry, onCommand: 
                 }
             });
             
-            const result = await chat.sendMessageStream({ message: input });
+            const result = await chat.sendMessageStream({ message: trimmed });
             const aiMsgId = (Date.now() + 1).toString();
             setHistory(prev => [...prev, { id: aiMsgId, role: 'ai', text: '', timestamp: new Date().toLocaleTimeString() }]);
 
@@ -848,9 +855,9 @@ const BlenderView = ({ loadFactorSetter }: { loadFactorSetter: (n: number) => vo
                 </div>
                 {status === 'generating' && (
                     <div className="mt-4 p-3 bg-black/50 rounded border border-zinc-800 font-mono text-[10px] text-zinc-400 space-y-1">
-                        <div className="text-emerald-500">> init_point_cloud()</div>
-                        <div className="text-zinc-500">> generating_vertices...</div>
-                        <div className="animate-pulse">> texturing_uv_map</div>
+                        <div className="text-emerald-500">&gt; init_point_cloud()</div>
+                        <div className="text-zinc-500">&gt; generating_vertices...</div>
+                        <div className="animate-pulse">&gt; texturing_uv_map</div>
                     </div>
                 )}
             </div>
